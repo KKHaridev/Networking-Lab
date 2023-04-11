@@ -1,8 +1,6 @@
 #include<stdio.h>
 #include<stdlib.h>
-
 #include<math.h>
-
 #include<unistd.h>
 
 
@@ -10,6 +8,7 @@ int r,n;
 struct frame{
 	int data;
 	char ack;
+	char wait;
 	
 }frm[100];
 
@@ -51,34 +50,73 @@ void get_values(){
 		scanf("%d",&frm[i].data);
 		frm[i].ack='y';
 		rand();	
-		r=rand()%n;
+		r=3;
 	}
 }
 
 void selective(){
 	get_values();
+	int lc=1;
 	int w_size;
 	printf("Enter The Window Size: ");
 	scanf("%d",&w_size);
 	frm[r].ack='n';
-	for(int i = 1; i <=(n - w_size) + 1; i++)  {   
+	end:
+	for(int i = lc; i <=(n - w_size) + 1;)  {   
         for(int j = i; j < i + w_size; j++){  
-            printf("Sending value %d\n",frm[j].data);
-            sleep(1);
-           if(frm[j].ack=='n'){
-            	printf("Packet Lost\n");
-            	sleep(1);
-            	printf("Resending...\n");
-            	printf("Sending value %d\n",frm[j].data);
-            	frm[j].ack='y';	
-            }
-            else{
-            	printf("Packet received with data : %d\n",frm[j].data);
-            }
+            if(frm[j].wait!='n'){
+				printf("Sending value %d\n",frm[j].data);
+			}
+			frm[j].wait='y';
+            
+           
         }  
+		sleep(1);
+		int count=0;
+		for(int j = i; j < i + w_size; j++){
+			if(frm[j].ack=='y'){
+				if(j==i)
+				count++;
+				printf("Packet received with data : %d\n",frm[j].data);
+				
+            }
+			else{
+				printf("Packet Lost %d\n",frm[j].data);
+				goto skip;
+			}
+			
+			if(count>0){
+				lc++;
+				printf("skipping\n");
+				
+				goto end;
+			}
+			}
+		}
+		skip:
+
+		for(int i = lc; i <=n;i++){
+			if(frm[i].ack!='n'){
+				printf("Sending value %d\n",frm[i].data);
+			}
+			if(frm[i].ack=='y'){
+				printf("Packet received with data : %d\n",frm[i].data);
+				
+            }
+			else{
+				frm[i].ack='y';
+				printf("Packet Lost %d\n",frm[i].data);
+			}
+			if (i==lc+(w_size-1)){
+				printf("Packet received with data : %d\n",frm[r].data);
+			}
+		}
+
+		
     }  
 	
-}
+
+
 void goBack(){
 	
 }
